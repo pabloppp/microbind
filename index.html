@@ -14,7 +14,7 @@
 				variable1 = "hola <b>amigos</b>";
 				variable3 = "s";
 
-				addme = function(val){
+				addme = function(val, event){
 					variable1 += val || "";
 
 					if(variable2) variable2 = '';
@@ -55,7 +55,7 @@
 		<div bind-drop="dropped(event)"> drop here... </div><br><br>
 		<input type="text" bind="variable1"><br>
 		<input type="text" bind="variable2">
-		<button bind-click="addme(variable2)"> Añadir <span bind="variable2 || ''"></span></button><br>
+		<button bind-click="addme(variable2, event)"> Añadir <span bind="variable2 || ''"></span></button><br>
 		<span bind-show="variable2"> HIDDEN UNTIL YOU WRITE</span> <---> <span bind-hide="variable2"> HIDDEN IF YOU WRITE</span>
 		<br><button onClick="$.reset()">RESET BINDING</button>
 		
