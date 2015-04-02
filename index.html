@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Microbind test</title>
+
+		<script src="microbind.js" type="text/javascript" charset="utf-8"></script>
+
+		<script>
+			//PROBEMOS LA LIBRERIA
+			$.onLoad("myapp", function(){ //ESPERAMOS A QUE CARGUE EL DOM
+
+				//$.find("#micasa").text("albatros");	
+				variable1 = "hola <b>amigos</b>";
+				variable3 = "s";
+
+				addme = function(val){
+					variable1 += val || "";
+
+					if(variable2) variable2 = '';
+				}
+
+				dragged = function(event){
+					draggedLabel = "dragged";
+					//event.dataTransfer.setData("data1", "value1");
+				}
+
+				dropped = function(event){
+					event.preventDefault();
+					draggedLabel = "dropped";
+					event.target.innerHTML="yeah!";
+				}
+
+			})
+
+			$.stop(); //ASI EVITAMOS QUE SE EJECUTE HASTA QUEQUERAMOS INICIARLO
+
+
+		</script>
+
+		<style>
+		.dragme{
+			background-color: grey;	
+			cursor: pointer;
+		}
+		</style>
+	
+	</head>
+	<body bind-root="myapp" >
+		<h1>MICROBIND</h1>
+		<span bind-hide="true"><button onClick="$.run()">START BINDING</button></span> <span bind="'BINDING IN PROGRESS'"><----- CLICK HERE!!!!</span><br><br>
+		<i>safe bind ------></i> <span bind="variable1"></span><br>
+		<i>unsafe bind ---></i> <span bind-unsafe="variable1"></span><br>
+		<span bind-drag bind-drag-start="dragged(event)" class="dragme" >drag me</span> - <span bind="draggedLabel" ></span><br>
+		<div bind-drop="dropped(event)"> drop here... </div><br><br>
+		<input type="text" bind="variable1"><br>
+		<input type="text" bind="variable2">
+		<button bind-click="addme(variable2)"> Añadir <span bind="variable2 || ''"></span></button><br>
+		<span bind-show="variable2"> HIDDEN UNTIL YOU WRITE</span> <---> <span bind-hide="variable2"> HIDDEN IF YOU WRITE</span>
+		<br><button onClick="$.reset()">RESET BINDING</button>
+		
+	</body>
+</html>
