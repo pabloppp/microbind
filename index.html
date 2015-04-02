@@ -54,9 +54,10 @@
 		<span bind-drag bind-drag-start="dragged(event)" class="dragme" >drag me</span> - <span bind="draggedLabel" ></span><br>
 		<div bind-drop="dropped(event)"> drop here... </div><br><br>
 		<input type="text" bind="variable1"><br>
-		<input type="text" bind="variable2">
+		<input type="text" bind="variable2"><br>
 		<button bind-click="addme(variable2, event)"> Añadir <span bind="variable2 || ''"></span></button><br>
 		<span bind-show="variable2"> HIDDEN UNTIL YOU WRITE</span> <---> <span bind-hide="variable2"> HIDDEN IF YOU WRITE</span>
+		<br><input type="text" bind="$.p.mydata" placeholder="DATOS PERSISTENTES">
 		<br><button onClick="$.reset()">RESET BINDING</button>
 		
 	</body>

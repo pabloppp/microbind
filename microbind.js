@@ -86,6 +86,9 @@
 		$.digest();
 	}
 
+	$.persistent = localStorage;
+	$.p = $.persistent;
+
 	$.digest = function(){
 		var redigest = false;
 		for(var index in $._watchList){
