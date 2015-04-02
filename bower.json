@@ -1,6 +1,6 @@
 {
     "name": "microbind",
-    "version": "0.1",
+    "version": "0.0.1",
     "main": "microbind.js",
     "ignore": [
     	"index.html",
