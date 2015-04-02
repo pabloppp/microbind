@@ -1,0 +1,17 @@
+{
+    "name": "microbind",
+    "version": "0.1-beta",
+    "main": "microbind.js",
+    "ignore": [
+    	"index.html",
+        "source",
+        ".bowerrc",
+        ".gitignore",
+        ".jshintignore",
+        ".jshintrc",
+        "bower.json",
+        "gruntfile.js",
+        "package.json",
+        "README.md"
+    ],
+}
