@@ -27,14 +27,15 @@
 	//UTILIDADES ---->
 
 	//BUSCAR ELEMENTO
-	$.find = function(str){
+	$.find = function(str, parentNode){
+		parentNode = parentNode || document;
 		if(str[0] == "#"){ //BUSCAMOS POR ID
 			var id = str.slice(1);
-			var element = $._setNode(document.getElementById(id));
+			var element = $._setNode(parentNode.getElementById(id));
 			return element;
 		}
 		else{
-			var elements = document.querySelectorAll(str);
+			var elements = parentNode.querySelectorAll(str);
 			var nodes = [];
 			[].forEach.call(elements, function(element){
 				var newNode = $._setNode(element);
@@ -44,11 +45,22 @@
 		}
 	}
 
-	$.watch = function(exp, fn){
+	$.destroy = function(ele){
+		for(var i in $._watchList){
+			if ($._watchList[i].el == ele){
+				$._watchList.splice(i, 1);
+				i -= 1;	
+			}
+		}
+		ele.parentNode.removeChild(ele);
+	}
+
+	$.watch = function(exp, fn, el){
 		var watcher = {
 			exp : exp,
-			old : $.eval(exp),
-			fn : fn
+			old : ($.eval(exp) && Array.isArray($.eval(exp))) ? $.eval(exp).slice(0) : $.eval(exp),
+			fn : fn,
+			el : el || document
 		};
 		$._watchList.push(watcher);
 	}
@@ -93,10 +105,12 @@
 		var redigest = false;
 		for(var index in $._watchList){
 			var watcher = $._watchList[index];
-			if( watcher.old != $.eval(watcher.exp) ){
+			var evaluated = $.eval(watcher.exp);
+			if( watcher.old != evaluated && watcher.old.toString() != evaluated.toString()){
+
 				var newValue = $.eval(watcher.exp);
 				watcher.fn(newValue, watcher.old);
-				$._watchList[index].old = newValue;
+				$._watchList[index].old = (newValue && Array.isArray(newValue)) ? newValue.slice(0) : newValue;
 				
 				redigest = true;	
 			}
@@ -134,28 +148,44 @@
 			while($._functions.length > 0){ //EJECUTA LAS FUNCIONES
 				var nodes = document.querySelectorAll("[bind-root="+$._functions[0].name+"]");
 
-				if(nodes.length > 0) $.apply($._functions[0].fn);
+				if(nodes.length == 1){
+
+					$.apply($._functions[0].fn);
+					$._bindSetup(nodes[0]);
+
+				}
 
 				$._functions_backup.push($._functions[0]);
 				$._functions.shift();
-			}
-
-			for(var name in $._bindingList){ //INICIALIZA LOS BINDINGS
-				var nodes = $.find("["+name+"]");
-				for(var index in nodes){
-					var attrVal = nodes[index].getAttribute(name);
-					$._bindingList[name]().link(nodes[index], attrVal);
-				}
 			}
 			
 		}
 		return this;
 	}
 
-	$.reset = function(){
+	$._bindSetup = function(node){
+		for(var name in $._bindingList){ //INICIALIZA LOS BINDINGS
+			var b_nodes = $.find("["+name+"]", node);
+			for(var index in b_nodes){
+				var attrVal = b_nodes[index].getAttribute(name);
+				$._bindingList[name]().link(b_nodes[index], attrVal);
+			}
+		}	
+	}
+
+
+
+	$.reset = function(resetHTML){
 		if($._stop) return;
-		var body = document.getElementsByTagName('body')[0];
-		body.parentNode.replaceChild($.body_clone, body);
+
+		if(resetHTML){
+			var body = document.getElementsByTagName('body')[0];
+			body.parentNode.replaceChild($.body_clone, body);
+		}
+		else{
+			var body = document.getElementsByTagName('body')[0];
+			body.parentNode.replaceChild(body.cloneNode(true), body);
+		}
 
 		while($._functions_backup.length > 0){ //RESETEA LAS FUNCIONES
 				$._functions = [];
@@ -184,6 +214,7 @@
 
 $.binding("bind", function(){
 	var link = function(element, attrs){
+
 		var content = $.eval(attrs);
 		if(element.tagName == "INPUT") element.value = content || "";
 		element.text($.HTMLSafe(content));
@@ -192,7 +223,7 @@ $.binding("bind", function(){
 				var content = newvalue;
 				if(element.tagName == "INPUT" && element.value != (content || "") ) element.value = content || "";
 				element.innerHTML = $.HTMLSafe(content);	
-			});
+			}, element);
 		}());
 		if(element.tagName == "INPUT"){
 			element.addEventListener("input", function(){
@@ -200,7 +231,8 @@ $.binding("bind", function(){
 					$.eval(attrs+"='"+element.value+"'");
 				})
 			});
-		}
+		}	
+
 	}
 	return {link: link};
 });
@@ -215,7 +247,7 @@ $.binding("bind-unsafe", function(){
 				var content = newvalue;
 				if(element.tagName == "INPUT" && element.value != (content || "") ) element.value = content || "";
 				element.innerHTML = content;	
-			});
+			}, element);
 		}());
 		if(element.tagName == "INPUT"){
 			element.addEventListener("input", function(event){
@@ -367,7 +399,7 @@ $.binding("bind-hide", function(){
 			if(newvalue && newvalue != "") element.classList.add("bind-hide");
 			else element.classList.remove("bind-hide");
 
-		});
+		}, element);
 		}());
 	}
 	return {link: link};
@@ -385,8 +417,133 @@ $.binding("bind-show", function(){
 			if(newvalue && newvalue != "") element.classList.remove("bind-hide");
 			else element.classList.add("bind-hide");
 
-		});
+		}, element);
 		}());
+	}
+	return {link: link};
+});
+
+$.binding("bind-foreach", function(){
+	var link = function(element, attrs){
+		var startComment = document.createComment("bind-foreach-start=\""+attrs+"\"");
+		var endComment = document.createComment("bind-foreach-end=\""+attrs+"\"");
+		//var text = document.createTextNode("Water");
+		element.removeAttribute("bind-foreach");
+
+		var template = element.cloneNode(true);
+
+		var varName = attrs.split(" in ")[0].trim();
+		var arrayName = attrs.split(" in ")[1].trim();
+
+		body = document.getElementsByTagName('body')[0];
+
+		body.insertBefore(startComment, element);
+		body.insertBefore(endComment, element);
+
+		element.parentNode.removeChild(element);
+		
+		var populate = function(){
+			try{
+				var evaluated = JSON.parse($.eval(arrayName));
+			}catch(error){
+				var evaluated = $.eval(arrayName);
+			}
+			for(var index in evaluated){
+				(function(){
+					$.apply(function(){
+						var newNode = template.cloneNode(true);
+						var newIdx = arrayName+"['"+index+"']";
+						var scapedNewIdx = ("\\"+newIdx).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+						newNode.innerHTML = newNode.innerHTML.replace(new RegExp(varName, 'g'), newIdx);
+
+						newNode.innerHTML = newNode.innerHTML.replace(new RegExp(scapedNewIdx, 'g'), varName);
+
+						$._bindSetup(newNode);
+
+						body.insertBefore(newNode, endComment);
+					})
+				}());
+			}
+		}
+		populate();
+
+		
+
+		$.watch(arrayName, function(newvalue, oldvalue){
+			if(newvalue.length != oldvalue.length){
+				console.log("repopulate "+newvalue+" "+oldvalue);
+
+				var node = startComment.nextSibling;
+				var realNodes = [];
+				while(node != endComment){
+					realNodes.push(node);
+					node = node.nextSibling;					
+				}
+
+				//clear old nodes
+				for(var i in realNodes){
+					$.destroy(realNodes[i]);
+				}
+				
+				//adding new nodes
+
+				for(var index in newvalue){
+
+							var newNode = template.cloneNode(true);
+							var newIdx = arrayName+"['"+index+"']";
+							var scapedNewIdx = ("\\"+newIdx).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+							newNode.innerHTML = newNode.innerHTML.replace(new RegExp(varName, 'g'), newIdx);
+
+							newNode.innerHTML = newNode.innerHTML.replace(new RegExp(scapedNewIdx, 'g'), varName);
+
+							$._bindSetup(newNode);
+
+							body.insertBefore(newNode, endComment);
+		
+				}
+
+				//---	
+				
+				//populate();	
+			}	
+		}, element);
+
+		
+
+	}
+	return {link: link};
+});
+
+$.binding("bind-class", function(){
+	var link = function(element, attrs){
+		if(attrs[0] == "{" && attrs[attrs.length-1] == "}"){
+			var expr = attrs.substring(1, attrs.length-1);
+			var conditionList = expr.split(",");
+			for(var i in conditionList){
+				(function () { //declare new scope
+					var condition = conditionList[i].trim();
+					var pair = condition.split(":");
+					if(pair.length == 2){
+						var key = pair[0];
+						var val = pair[1];
+						$.watch(val, function(newvalue, oldvalue){
+							process(newvalue, oldvalue);
+						}, element);
+						var process = function(newval, oldval){
+							var keyParsed = $.eval(key);
+							if(!newval || newval == ""){
+								if(element.classList.contains(keyParsed)) element.classList.remove(keyParsed);	
+							}
+							else{
+								if(!element.classList.contains(keyParsed)) element.classList.add(keyParsed);
+							};
+						}
+						process($.eval(val));
+					}
+				}());
+			}
+		}
+		else console.log("wrong bind-class expression")
 	}
 	return {link: link};
 });

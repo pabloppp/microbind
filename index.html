@@ -9,15 +9,15 @@
 		<script>
 			//PROBEMOS LA LIBRERIA
 			$.onLoad("myapp", function(){ //ESPERAMOS A QUE CARGUE EL DOM
-
 				//$.find("#micasa").text("albatros");	
 				variable1 = "hola <b>amigos</b>";
-				variable3 = "s";
+				variable2 = "s";
+
 
 				addme = function(val, event){
 					variable1 += val || "";
 
-					if(variable2) variable2 = '';
+					//if(variable2) variable2 = '';
 				}
 
 				dragged = function(event){
@@ -31,9 +31,25 @@
 					event.target.innerHTML="yeah!";
 				}
 
+				letras = ["A","E","I","O","U"];
+				//letras = {a:"A",e:"E",i:"I",o:"O",u:"U"};
+
+				addToArray = function(){
+					letras.push("Y");
+					letras.splice(2, 0, "Z");
+					letras.push("MIPENE")
+					letras.pop();
+					//console.log(letras);
+				}
+
+				classTester = false;
+
+
 			})
 
-			$.stop(); //ASI EVITAMOS QUE SE EJECUTE HASTA QUEQUERAMOS INICIARLO
+			
+
+			//$.stop(); //ASI EVITAMOS QUE SE EJECUTE HASTA QUEQUERAMOS INICIARLO
 
 
 		</script>
@@ -42,6 +58,12 @@
 		.dragme{
 			background-color: grey;	
 			cursor: pointer;
+		}
+		.class1{
+			color: red;
+		}
+		.class2{
+			color: green;
 		}
 		</style>
 	
@@ -59,6 +81,14 @@
 		<span bind-show="variable2"> HIDDEN UNTIL YOU WRITE</span> <---> <span bind-hide="variable2"> HIDDEN IF YOU WRITE</span>
 		<br><input type="text" bind="$.p.mydata" placeholder="DATOS PERSISTENTES">
 		<br><button onClick="$.reset()">RESET BINDING</button>
+
+		<div bind-foreach="letra in letras">
+			Elemento \letra: <span bind="letra"></span> <input bind="letra">
+		</div>
+
+		<div bind-class="{'class1' : classTester , 'class2' : !classTester}" bind-click="classTester = !classTester"> BIND-CLASS TEST <--- Click me!</div>
+
+		<button bind-click="addToArray()">ADD ELEMENT TO ARRAY</button>
 		
 	</body>
 </html>
